@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16
+    container_name: todomini_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: todomini
+    ports:
+      - "5432:5432"
+    volumes:
+      - todomini_pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: todomini_backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/todomini
+      JWT_SECRET: change_me_super_secret
+      JWT_ALG: HS256
+      JWT_EXPIRES_MIN: "60"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+volumes:
+  todomini_pgdata:

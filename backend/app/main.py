@@ -1,16 +1,23 @@
-# This is a sample Python script.
+from fastapi import FastAPI, Depends
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from app.db.session import engine
+from app.db.base import Base
+from app.models.user import User
 
+from app.routers.auth import router as auth_router
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+app = FastAPI(title="TODO MINI API", version="0.1.0")
 
+Base.metadata.create_all(bind=engine)
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+app.include_router(auth_router)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+from app.services.auth import require_user
+
+@app.get("/api/v1/protected")
+def protected_route(user_email: str = Depends(require_user)):
+    return {"message": "you are authorized", "user": user_email}
