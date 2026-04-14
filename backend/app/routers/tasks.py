@@ -89,6 +89,24 @@ def get_my_active_tasks(
     return tasks
 
 
+@router.get("/completed", response_model=list[TaskOut])
+def get_my_completed_tasks(
+    user_email: str = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    user = get_current_user(db, user_email)
+
+    tasks = db.scalars(
+        select(Task).where(
+            Task.owner_id == user.id,
+            Task.is_deleted == False,
+            Task.completed_at.is_not(None),
+        )
+    ).all()
+
+    return tasks
+
+
 @router.get("/deleted", response_model=list[TaskOut])
 def get_my_deleted_tasks(
     user_email: str = Depends(require_user),
@@ -104,6 +122,28 @@ def get_my_deleted_tasks(
     ).all()
 
     return tasks
+
+
+@router.patch("/{task_id}/toggle-complete", response_model=TaskOut)
+def toggle_task_complete(
+    task_id: int,
+    user_email: str = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    user = get_current_user(db, user_email)
+    task = get_user_active_task_or_404(db, task_id, user.id)
+
+    if task.completed_at is None:
+        task.completed_at = datetime.now(timezone.utc)
+    else:
+        task.completed_at = None
+
+    task.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(task)
+
+    return task
 
 
 @router.put("/{task_id}", response_model=TaskOut)

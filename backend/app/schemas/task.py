@@ -28,6 +28,7 @@ class TaskOut(BaseModel):
     is_deleted: bool
     deleted_at: datetime | None
     owner_id: int
+    auto_status: str | None = None
 
     class Config:
         from_attributes = True

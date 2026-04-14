@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { removeToken } from "../services/auth";
 import { fetchDeletedTasks } from "../services/tasks";
+import { formatDateTime } from "../utils/date";
 import "../styles/home.css";
 
 export default function DeletedTasks({ setToken, goToHome }) {
+  // Deleted task list state
   const [deletedTasks, setDeletedTasks] = useState([]);
+
+  // General UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Read-only modal state
   const [selectedTask, setSelectedTask] = useState(null);
 
   function handleLogout() {
@@ -14,6 +20,7 @@ export default function DeletedTasks({ setToken, goToHome }) {
     setToken(null);
   }
 
+  // Loads deleted tasks for the current authenticated user
   async function loadDeletedTasks() {
     try {
       setLoading(true);
@@ -33,60 +40,82 @@ export default function DeletedTasks({ setToken, goToHome }) {
 
   return (
     <div className="home-page">
+      {/* Top bar */}
       <header className="home-header">
-        <div>
-          <h1 className="home-logo">TodoMini</h1>
-          <p className="home-subtitle">Удаленные задачи</p>
-        </div>
-
-        <div className="header-actions">
-          <button type="button" className="toggle-button" onClick={goToHome}>
-            Назад к задачам
-          </button>
-
-          <button onClick={handleLogout} className="logout-button">
-            Выйти
-          </button>
-        </div>
+        <h1 className="home-logo">TodoMini</h1>
       </header>
 
-      <main className="home-main single-column">
-        <section className="home-left full-width">
+      {/* Main shell: sidebar + deleted task list */}
+      <main className="home-shell without-right-panel">
+        {/* Left sidebar */}
+        <aside className="home-sidebar">
+          <div className="sidebar-content">
+            <div className="sidebar-top">
+              <div className="sidebar-user">
+                <div className="sidebar-avatar" />
+                <div className="sidebar-user-info">
+                  <p className="sidebar-user-name">User</p>
+                  <p className="sidebar-user-email">user@example.com</p>
+                </div>
+              </div>
+
+              <nav className="sidebar-nav">
+                <button
+                  type="button"
+                  className="sidebar-nav-item"
+                  onClick={goToHome}
+                >
+                  Back to tasks
+                </button>
+
+                <button
+                  type="button"
+                  className="sidebar-nav-item sidebar-nav-item-active"
+                >
+                  Deleted tasks
+                </button>
+              </nav>
+            </div>
+
+            <div className="sidebar-bottom">
+              <button onClick={handleLogout} className="sidebar-logout-button">
+                Logout
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Center content */}
+        <section className="home-center">
           <div className="card">
-            <h2 className="section-title">Удаленные задачи</h2>
+            <h2 className="section-title">Deleted tasks</h2>
 
             {loading ? (
-              <p className="section-muted">Загрузка задач...</p>
+              <p className="section-muted">Loading deleted tasks...</p>
             ) : deletedTasks.length === 0 ? (
-              <p className="section-muted">Удаленных задач пока нет.</p>
+              <p className="section-muted">There are no deleted tasks yet.</p>
             ) : (
               <div className="task-list">
                 {deletedTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="task-item clickable-task"
+                    className="task-item clickable-task completed"
                     onClick={() => setSelectedTask(task)}
-                    >
-                    <div className="task-header">
-                      <h3 className="task-title">{task.title}</h3>
-                      <span className={`priority-badge ${task.priority.toLowerCase()}`}>
+                  >
+                    <div className="task-row">
+                      <div className="task-circle done" />
+
+                      <div className="task-content">
+                        <h3 className="task-title">{task.title}</h3>
+                        <p className="task-due">
+                          Deleted: {formatDateTime(task.deleted_at)}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`priority-badge ${task.priority.toLowerCase()}`}
+                      >
                         {task.priority}
-                      </span>
-                    </div>
-
-                    {task.description && (
-                      <p className="task-description">{task.description}</p>
-                    )}
-
-                    <div className="task-meta">
-                      <span>
-                        Создано: {new Date(task.created_at).toLocaleString()}
-                      </span>
-                      <span>
-                        Удалено:{" "}
-                        {task.deleted_at
-                          ? new Date(task.deleted_at).toLocaleString()
-                          : "—"}
                       </span>
                     </div>
                   </div>
@@ -99,47 +128,40 @@ export default function DeletedTasks({ setToken, goToHome }) {
         </section>
       </main>
 
-
-        {selectedTask && (
+      {/* Read-only deleted task modal */}
+      {selectedTask && (
         <div className="modal-backdrop" onClick={() => setSelectedTask(null)}>
-            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h2 className="section-title">Задача</h2>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h2 className="section-title">Task</h2>
 
             <p><strong>Title:</strong> {selectedTask.title}</p>
             <p><strong>Description:</strong> {selectedTask.description || "—"}</p>
             <p><strong>Priority:</strong> {selectedTask.priority}</p>
 
             <p>
-                <strong>Due date:</strong>{" "}
-                {selectedTask.due_date
-                ? new Date(selectedTask.due_date).toLocaleDateString()
-                : "—"}
+              <strong>Created at:</strong>{" "}
+              {formatDateTime(selectedTask.created_at)}
             </p>
 
             <p>
-                <strong>Created at:</strong>{" "}
-                {new Date(selectedTask.created_at).toLocaleString()}
-            </p>
-
-            <p>
-                <strong>Deleted at:</strong>{" "}
-                {selectedTask.deleted_at
-                ? new Date(selectedTask.deleted_at).toLocaleString()
+              <strong>Deleted at:</strong>{" "}
+              {selectedTask.deleted_at
+                ? formatDateTime(selectedTask.deleted_at)
                 : "—"}
             </p>
 
             <div className="modal-actions">
-                <button
+              <button
                 type="button"
                 className="close-button"
                 onClick={() => setSelectedTask(null)}
-                >
-                Закрыть
-                </button>
+              >
+                Close
+              </button>
             </div>
-            </div>
+          </div>
         </div>
-        )}
-     </div>
-    )
+      )}
+    </div>
+  );
 }

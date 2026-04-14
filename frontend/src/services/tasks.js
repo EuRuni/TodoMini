@@ -83,3 +83,36 @@ export async function deleteTask(taskId) {
 
   return data;
 }
+
+export async function fetchCompletedTasks() {
+  const response = await fetch("http://localhost:8000/api/v1/tasks/completed", {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Error loading completed tasks");
+  }
+
+  return data;
+}
+
+export async function toggleTaskComplete(taskId) {
+  const response = await fetch(
+    `http://localhost:8000/api/v1/tasks/${taskId}/toggle-complete`,
+    {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Error toggling task");
+  }
+
+  return data;
+}
